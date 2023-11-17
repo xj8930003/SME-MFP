@@ -6,6 +6,94 @@ from train import train_main
 
 # coding=utf-8
 
+modelDir = 'model'
+Path(modelDir).mkdir(exist_ok=True)
+peptide_type = ['AAP', 'ABP', 'ACP', 'ACVP', 'ADP', 'AEP', 'AFP', 'AHIVP', 'AHP', 'AIP', 'AMRSAP', 'APP', 'ATP',
+                'AVP',
+                'BBP', 'BIP',
+                'CPP', 'DPPIP',
+                'QSP', 'SBP', 'THP']
+
+
+def staticTrainandTest(y_train, y_test):
+    # static number
+    data_size_tr = np.zeros(len(peptide_type))
+    data_size_te = np.zeros(len(peptide_type))
+
+    for i in range(len(y_train)):
+        for j in range(len(y_train[i])):
+            if y_train[i][j] > 0:
+                data_size_tr[j] += 1
+
+    for i in range(len(y_test)):
+        for j in range(len(y_test[i])):
+            if y_test[i][j] > 0:
+                data_size_te[j] += 1
+
+    print("TrainingSet:\n")
+    for i in range(len(peptide_type)):
+        print('{}:{}\n'.format(peptide_type[i], int(data_size_tr[i])))
+
+    print("TestingSet:\n")
+    for i in range(len(peptide_type)):
+        print('{}:{}\n'.format(peptide_type[i], int(data_size_te[i])))
+
+    return data_size_tr
+
+
+def PadEncode(data, label, max_len, vocab):
+    #amino_acids = 'XACDEFGHIKLMNPQRSTVWY'
+    data_e, label_e = [], []
+    sign = 0
+    for i in range(len(data)):
+        length = len(data[i])
+        elemt, st = [], data[i].strip()
+        for j in st:
+            if j not in vocab:
+                if j =='J':
+                    j = 'L'
+                else:
+                    sign = 1
+                    break
+            index = vocab[j]
+            elemt.append(index)
+            sign = 0
+
+        if length <= max_len and sign == 0:
+            elemt += [vocab['X']] * (max_len - length)
+            data_e.append(elemt)
+            label_e.append(label[i])
+        elif length > max_len and sign == 0:
+            elemt = elemt[:max_len]
+            data_e.append(elemt)
+            label_e.append(label[i])
+    return np.array(data_e), np.array(label_e)
+
+
+def getSequenceData(first_dir, file_name):
+    data, label = [], []
+    path = "{}/{}.txt".format(first_dir, file_name)
+
+    with open(path) as f:
+        for each in f:
+            each = each.strip()
+            if each[0] == '>':
+                label.append(np.array(list(each[1:]), dtype=int))  # Converting string labels to numeric vectors
+            else:
+                data.append(each)
+
+    return data, label
+
+
+def TrainAndTest(tr_data, tr_label, te_data, te_label, data_size, embedding):
+    # Call training method
+
+    train = [tr_data, tr_label]
+    test = [te_data, te_label]
+    model_num = 10  # 训练十次的模型的结果。
+
+    train_main(train, test, model_num, modelDir, data_size, embedding)
+
 dBIT = {
         'A': [0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0],
         'R': [0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1],
