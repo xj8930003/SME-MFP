@@ -2,7 +2,6 @@ import torch
 from torch.utils.data import DataLoader
 import numpy as np
 
-
 class Dataset(object):
     def __init__(self, data):
         self.train_values = data[0]
@@ -15,10 +14,6 @@ class Dataset(object):
 
     def __len__(self):
         return self.train_values.shape[0]
-
-
-
-
 
 if __name__ == '__main__':
     v = np.random.rand(5,4)
